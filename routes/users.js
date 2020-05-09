@@ -25,75 +25,6 @@ router.get('/', cors.cors, authenticate.verifyUser, authenticate.verifyAdmin, fu
     }); 
 });
 
-// router.post('/signup', (req, res, next) => {
-//   User.findOne({username: req.body.username})
-//   .then((user) => {
-//     if(user != null) {
-//       var err = new Error('User ' + req.body.username + ' already exists!');
-//       err.status = 403;
-//       next(err);
-//     }
-//     else {
-//       return User.create({
-//         username: req.body.username,
-//         password: req.body.password});
-//     }
-//   })
-//   .then((user) => {
-//     res.statusCode = 200;
-//     res.setHeader('Content-Type', 'application/json');
-//     res.json({status: 'Registration Successful!', user: user});
-//   }, (err) => next(err))
-//   .catch((err) => next(err));
-// });
-
-// router.post('/login', (req, res, next) => {
-
-//   if(!req.session.user) {
-//     var authHeader = req.headers.authorization;
-    
-//     if (!authHeader) {
-//       var err = new Error('You are not authenticated!');
-//       res.setHeader('WWW-Authenticate', 'Basic');
-//       err.status = 401;
-//       return next(err);
-//     }
-  
-//     var auth = new Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
-//     var username = auth[0];
-//     var password = auth[1];
-  
-//     User.findOne({username: username})
-//     .then((user) => {
-//       if (user === null) {
-//         var err = new Error('User ' + username + ' does not exist!');
-//         err.status = 403;
-//         return next(err);
-//       }
-//       else if (user.password !== password) {
-//         var err = new Error('Your password is incorrect!');
-//         err.status = 403;
-//         return next(err);
-//       }
-//       else if (user.username === username && user.password === password) {
-//         req.session.user = 'authenticated';
-//         res.statusCode = 200;
-//         res.setHeader('Content-Type', 'text/plain');
-//         res.end('You are authenticated!')
-//       }
-//     })
-//     .catch((err) => next(err));
-//   }
-//   else {
-//     res.statusCode = 200;
-//     res.setHeader('Content-Type', 'text/plain');
-//     res.end('You are already authenticated!');
-//   }
-// })
-// passport.use(new localStrategy({
-//   usernameField: 'email'
-// }));
-
 router.post('/signup', cors.corsWithOptions, (req, res, next) => {
   User.register(new User({email: req.body.email}), 
     req.body.password, (err, user) => {
@@ -187,6 +118,607 @@ router.get('/logout', cors.cors, (req, res) => {
     // next(err);
     res.json(err.message);
   }
+});
+
+
+router.route('/:userId')
+.options(cors.corsWithOptions,authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => { res.sendStatus(200); })
+.get(cors.cors, (req,res,next) => {
+    User.findById(req.params.userId)
+    .populate('wishlist')
+    .populate('orders')
+    .populate('cart.varient')
+    .then(user =>{
+        res.statusCode =200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(user);
+    }, err =>{
+        next(err);
+    }).catch(err =>{
+        next(err);
+    }); 
+})
+
+.post(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
+    res.statusCode = 403;
+    res.end('POST operation not supported on /users/'+ req.params.userId);
+})
+
+.put(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+    User.findByIdAndUpdate(req.params.userId,{
+        $set: req.body
+    },
+    {
+        new: true
+    }).then(user =>{
+        res.statusCode =200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(user);
+    }, err =>{
+        next(err);
+    }).catch(err =>{
+        next(err);
+    }); 
+})
+
+.delete(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+    User.findByIdAndRemove(req.params.userId).then(response =>{
+        res.statusCode =200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(response); 
+    }, err =>{
+        next(err);
+    }).catch(err =>{
+        next(err);
+    });
+    });
+
+router.route('/:userId/orders')
+.options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
+.get(cors.cors, (req,res,next) => {
+    User.findById(req.params.userId)
+    .populate('wishlist')
+    .populate('orders')
+    .populate('cart.varient')
+    .then((user) => {
+        if (user != null) {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.json(user.orders);
+        }
+        else {
+            err = new Error('User ' + req.params.userId + ' not found');
+            err.status = 404;
+            return next(err);
+        }
+    }, (err) => next(err))
+    .catch((err) => next(err));
+})
+.post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+    User.findById(req.params.userId)
+    .then((user) => {
+        if (user != null) {
+            // req.body.author = req.user._id;
+            user.orders.push(req.body.id);
+            user.save()
+            .then((user) => {
+                User.findById(user._id).populate('wishlist').populate('orders').populate('cart.varient').then(user =>{
+                    res.statusCode = 200;
+                    res.setHeader('Content-Type', 'application/json');
+                    res.json(user); 
+                })
+                               
+            }, (err) => next(err));
+        }
+        else {
+            err = new Error('User ' + req.params.userId + ' not found');
+            err.status = 404;
+            return next(err);
+        }
+    }, (err) => next(err))
+    .catch((err) => next(err));
+})
+.put(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
+    res.statusCode = 403;
+    res.end('PUT operation not supported on /users/'
+        + req.params.userId + '/orders');
+})
+.delete(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+    User.findById(req.params.userId)
+    .populate('orders')
+    .then((user) => {
+        if (user != null) {
+            for (var i = (user.orders.length -1); i >= 0; i--) {
+                user.orders.id(user.orders[i]._id).remove();
+            }
+            user.save()
+            .then((user) => {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(user);                
+            }, (err) => next(err));
+        }
+        else {
+            err = new Error('User ' + req.params.userId + ' not found');
+            err.status = 404;
+            return next(err);
+        }
+    }, (err) => next(err))
+    .catch((err) => next(err));    
+});
+
+router.route('/:userId/orders/:orderId')
+.options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
+.get(cors.cors, (req,res,next) => {
+    User.findById(req.params.userId)
+    .populate('orders')
+    .then((user) => {
+        if (user != null && user.orders.id(req.params.orderId) != null) {
+
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.json(user.orders.id(req.params.orderId));
+        }
+        else if (user == null) {
+            err = new Error('User' + req.params.userId + ' not found');
+            err.status = 404;
+            return next(err);
+        }
+        else {
+            err = new Error('Order ' + req.params.orderId + ' not found');
+            err.status = 404;
+            return next(err);            
+        }
+    }, (err) => next(err))
+    .catch((err) => next(err));
+})
+.post(cors.corsWithOptions, (req, res, next) => {
+    res.statusCode = 403;
+    res.end('POST operation not supported on /users/'+ req.params.userId
+        + '/orders/' + req.params.orderId);
+})
+.put(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
+    res.statusCode = 403;
+    res.end('PUT operation not supported on /users/'+ req.params.userId
+        + '/orders/' + req.params.orderId);
+})
+.delete(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+    User.findById(req.params.userId)
+    .populate('orders')
+    .then((user) => {
+        if (user != null && user.orders.id(req.params.orderId) != null) {
+            // if(req.user._id.equals(category.subCategories.id(req.params.subCategorytId).author)){
+                user.orders.id(req.params.orderId).remove();
+                user.save()
+                .then((user) => {
+                    user.findById(user._id).populate('orders').populate('wishlist').populate('cart.varient').then(user =>{
+                        res.statusCode = 200;
+                        res.setHeader('Content-Type', 'application/json');
+                        res.json(user);
+                    })
+                                    
+                }, (err) => next(err));
+            // }
+            // else{
+            //     err = new Error('Only author can update a comment');
+            //     err.status = 403;
+            //     return next(err);
+            // }
+            
+        }
+        else if (user == null) {
+            err = new Error('User ' + req.params.userId + ' not found');
+            err.status = 404;
+            return next(err);
+        }
+        else {
+            err = new Error('Orders ' + req.params.orderId + ' not found');
+            err.status = 404;
+            return next(err);            
+        }
+    }, (err) => next(err))
+    .catch((err) => next(err));
+});
+
+router.route('/:userId/addresses')
+.options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
+.get(cors.cors, (req,res,next) => {
+    User.findById(req.params.userId)
+    .populate('wishlist')
+    .populate('orders')
+    .populate('cart.varient')
+    .then((user) => {
+        if (user != null) {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.json(user.addresses);
+        }
+        else {
+            err = new Error('User ' + req.params.userId + ' not found');
+            err.status = 404;
+            return next(err);
+        }
+    }, (err) => next(err))
+    .catch((err) => next(err));
+})
+.post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+    User.findById(req.params.userId)
+    .then((user) => {
+        if (user != null) {
+            // req.body.author = req.user._id;
+            user.addresses.push(req.body);
+            user.save()
+            .then((user) => {
+                User.findById(user._id).populate('wishlist').populate('orders').populate('cart.varient').then(user =>{
+                    res.statusCode = 200;
+                    res.setHeader('Content-Type', 'application/json');
+                    res.json(user); 
+                })
+                               
+            }, (err) => next(err));
+        }
+        else {
+            err = new Error('User ' + req.params.userId + ' not found');
+            err.status = 404;
+            return next(err);
+        }
+    }, (err) => next(err))
+    .catch((err) => next(err));
+})
+.put(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
+    res.statusCode = 403;
+    res.end('PUT operation not supported on /users/'
+        + req.params.userId + '/addresses');
+})
+.delete(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+    User.findById(req.params.userId)
+    .then((user) => {
+        if (user != null) {
+            for (var i = (user.addresses.length -1); i >= 0; i--) {
+                user.addresses.id(user.addresses[i]._id).remove();
+            }
+            user.save()
+            .then((user) => {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(user);                
+            }, (err) => next(err));
+        }
+        else {
+            err = new Error('User ' + req.params.userId + ' not found');
+            err.status = 404;
+            return next(err);
+        }
+    }, (err) => next(err))
+    .catch((err) => next(err));    
+});
+
+router.route('/:userId/addresses/:addressId')
+.options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
+.get(cors.cors, (req,res,next) => {
+    User.findById(req.params.userId)
+    .then((user) => {
+        if (user != null && user.addresses.id(req.params.addressId) != null) {
+
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.json(user.addresses.id(req.params.addressId));
+        }
+        else if (user == null) {
+            err = new Error('User' + req.params.userId + ' not found');
+            err.status = 404;
+            return next(err);
+        }
+        else {
+            err = new Error('Address ' + req.params.addressId + ' not found');
+            err.status = 404;
+            return next(err);            
+        }
+    }, (err) => next(err))
+    .catch((err) => next(err));
+})
+.post(cors.corsWithOptions, (req, res, next) => {
+    res.statusCode = 403;
+    res.end('POST operation not supported on /users/'+ req.params.userId
+        + '/addresses/' + req.params.addressId);
+})
+.put(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
+  User.findById(req.params.userId)
+  .then((user) => {
+      if (user != null && user.addresses.id(req.params.addressId) != null) {
+          // if(req.user._id.equals(dish.comments.id(req.params.commentId).author)){
+              if (req.body.houseNumber) {
+                  user.addresses.id(req.params.addressId).houseNumber = req.body.houseNumber;
+              }
+              if (req.body.firstStreet) {
+                  user.addresses.id(req.params.addressId).firstStreet = req.body.firstStreet;
+              }
+              if (req.body.city) {
+                  user.addresses.id(req.params.addressId).city = req.body.city;
+              }
+              if (req.body.state) {
+                  user.addresses.id(req.params.addressId).state = req.body.state;
+              }
+              if (req.body.zipCode) {
+                  user.addresses.id(req.params.addressId).zipCode = req.body.zipCode;
+              }
+              user.save()
+              .then((user) => {
+                  User.findById(user._id).then(user =>{
+                      res.statusCode = 200;
+                      res.setHeader('Content-Type', 'application/json');
+                      res.json(user);
+                  })
+                                  
+              }, (err) => next(err));
+          
+      }
+      else if (user == null) {
+          err = new Error('User ' + req.params.userId + ' not found');
+          err.status = 404;
+          return next(err);
+      }
+      else {
+          err = new Error('Address ' + req.params.addressId + ' not found');
+          err.status = 404;
+          return next(err);            
+      }
+  }, (err) => next(err))
+  .catch((err) => next(err));
+})
+.delete(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+    User.findById(req.params.userId)
+    .then((user) => {
+        if (user != null && user.addresses.id(req.params.addressId) != null) {
+            // if(req.user._id.equals(category.subCategories.id(req.params.subCategorytId).author)){
+                user.addresses.id(req.params.addressId).remove();
+                user.save()
+                .then((user) => {
+                    user.findById(user._id).populate('orders').populate('wishlist').populate('cart.varient').then(user =>{
+                        res.statusCode = 200;
+                        res.setHeader('Content-Type', 'application/json');
+                        res.json(user);
+                    })
+                                    
+                }, (err) => next(err));
+            // }
+            // else{
+            //     err = new Error('Only author can update a comment');
+            //     err.status = 403;
+            //     return next(err);
+            // }
+            
+        }
+        else if (user == null) {
+            err = new Error('User ' + req.params.userId + ' not found');
+            err.status = 404;
+            return next(err);
+        }
+        else {
+            err = new Error('Address ' + req.params.addressId + ' not found');
+            err.status = 404;
+            return next(err);            
+        }
+    }, (err) => next(err))
+    .catch((err) => next(err));
+});
+
+router.route('/:userId/wishlist')
+.options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
+.get(cors.cors, (req,res,next) => {
+    User.findById(req.params.userId)
+    .populate('wishlist')
+    .populate('orders')
+    .populate('cart.varient')
+    .then((user) => {
+        if (user != null) {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.json(user.wishlist);
+        }
+        else {
+            err = new Error('User ' + req.params.userId + ' not found');
+            err.status = 404;
+            return next(err);
+        }
+    }, (err) => next(err))
+    .catch((err) => next(err));
+})
+.post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+  User.findById(req.params.userId)
+    .then((user) => {
+        if (user != null) {
+            // req.body.author = req.user._id;
+            user.wishlist.push(req.body.id);
+            user.save()
+            .then((user) => {
+                User.findById(user._id).populate('wishlist').populate('orders').populate('cart.varient').then(user =>{
+                    res.statusCode = 200;
+                    res.setHeader('Content-Type', 'application/json');
+                    res.json(user); 
+                })
+                               
+            }, (err) => next(err));
+        }
+        else {
+            err = new Error('User ' + req.params.userId + ' not found');
+            err.status = 404;
+            return next(err);
+        }
+    }, (err) => next(err))
+    .catch((err) => next(err));
+})
+.put(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
+    res.statusCode = 403;
+    res.end('PUT operation not supported on /users/'
+        + req.params.userId + '/wishlist');
+})
+.delete(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+  User.findById(req.params.userId)
+    .populate('wishlist')
+    .then((user) => {
+        if (user != null) {
+            for (var i = (user.wishlist.length -1); i >= 0; i--) {
+                user.wishlist.id(user.wishlist[i]._id).remove();
+            }
+            user.save()
+            .then((user) => {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(user);                
+            }, (err) => next(err));
+        }
+        else {
+            err = new Error('User ' + req.params.userId + ' not found');
+            err.status = 404;
+            return next(err);
+        }
+    }, (err) => next(err))
+    .catch((err) => next(err));   
+});
+
+router.route('/:userId/wishlist/:productId')
+.options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
+.get(cors.cors, (req,res,next) => {
+    User.findById(req.params.userId)
+    .populate('wishlist')
+    .then((user) => {
+        if (user != null && user.wishlist.id(req.params.productId) != null) {
+
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.json(user.orders.id(req.params.orderId));
+        }
+        else if (user == null) {
+            err = new Error('User' + req.params.userId + ' not found');
+            err.status = 404;
+            return next(err);
+        }
+        else {
+            err = new Error('Product ' + req.params.productId + ' not found');
+            err.status = 404;
+            return next(err);            
+        }
+    }, (err) => next(err))
+    .catch((err) => next(err));
+})
+.post(cors.corsWithOptions, (req, res, next) => {
+    res.statusCode = 403;
+    res.end('POST operation not supported on /users/'+ req.params.userId
+        + '/wishlist/' + req.params.productId);
+})
+.put(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
+    res.statusCode = 403;
+    res.end('PUT operation not supported on /users/'+ req.params.userId
+        + '/wishlist/' + req.params.productId);
+})
+.delete(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+    User.findById(req.params.userId)
+    .populate('wishlist')
+    .then((user) => {
+        if (user != null && user.wishlist.id(req.params.productId) != null) {
+            // if(req.user._id.equals(category.subCategories.id(req.params.subCategorytId).author)){
+                user.wishlist.id(req.params.productId).remove();
+                user.save()
+                .then((user) => {
+                    user.findById(user._id).populate('orders').populate('wishlist').populate('cart.varient').then(user =>{
+                        res.statusCode = 200;
+                        res.setHeader('Content-Type', 'application/json');
+                        res.json(user);
+                    })
+                                    
+                }, (err) => next(err));
+            // }
+            // else{
+            //     err = new Error('Only author can update a comment');
+            //     err.status = 403;
+            //     return next(err);
+            // }
+            
+        }
+        else if (user == null) {
+            err = new Error('User ' + req.params.userId + ' not found');
+            err.status = 404;
+            return next(err);
+        }
+        else {
+            err = new Error('Product ' + req.params.productId + ' not found');
+            err.status = 404;
+            return next(err);            
+        }
+    }, (err) => next(err))
+    .catch((err) => next(err));
+});
+
+
+router.route('/:userId/contacts')
+.options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
+.get(cors.cors, (req,res,next) => {
+    User.findById(req.params.userId)
+    .then((user) => {
+        if (user != null) {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.json(user.contactNumbers);
+        }
+        else {
+            err = new Error('User ' + req.params.userId + ' not found');
+            err.status = 404;
+            return next(err);
+        }
+    }, (err) => next(err))
+    .catch((err) => next(err));
+})
+.post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+  User.findById(req.params.userId)
+    .then((user) => {
+        if (user != null) {
+            // req.body.author = req.user._id;
+            user.contacts.push(req.body.contactNumber);
+            user.save()
+            .then((user) => {
+                User.findById(user._id).populate('wishlist').populate('orders').populate('cart.varient').then(user =>{
+                    res.statusCode = 200;
+                    res.setHeader('Content-Type', 'application/json');
+                    res.json(user); 
+                })
+                               
+            }, (err) => next(err));
+        }
+        else {
+            err = new Error('User ' + req.params.userId + ' not found');
+            err.status = 404;
+            return next(err);
+        }
+    }, (err) => next(err))
+    .catch((err) => next(err));
+})
+.put(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
+    res.statusCode = 403;
+    res.end('PUT operation not supported on /users/'
+        + req.params.userId + '/wishlist');
+})
+.delete(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+  User.findById(req.params.userId)
+    .then((user) => {
+        if (user != null) {
+            for (var i = (user.contacts.length -1); i >= 0; i--) {
+                user.contacts[i].remove();
+            }
+            user.save()
+            .then((user) => {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(user);                
+            }, (err) => next(err));
+        }
+        else {
+            err = new Error('User ' + req.params.userId + ' not found');
+            err.status = 404;
+            return next(err);
+        }
+    }, (err) => next(err))
+    .catch((err) => next(err));   
 });
 
 

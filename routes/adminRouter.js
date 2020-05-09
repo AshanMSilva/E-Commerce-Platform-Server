@@ -1,7 +1,7 @@
 var express = require('express');
 const bodyParser = require('body-parser');
 var Admin = require('../models/admin');
-var User = require('../models/user');
+// var User = require('../models/user');
 var passport = require('passport');
 const cors = require('./cors');
 
@@ -13,8 +13,8 @@ adminRouter.use(bodyParser.json());
 
 /* GET users listing. */
 adminRouter.options('/', cors.corsWithOptions, (req, res) => { res.sendStatus(200); });
-adminRouter.get('/', cors.cors, authenticate.verifyAdmin, function(req, res, next) {
-  User.find({})
+adminRouter.get('/', cors.cors,authenticate.verifyUser, authenticate.verifyAdmin, function(req, res, next) {
+  Admin.find({})
     .then(users =>{
         res.statusCode =200;
         res.setHeader('Content-Type', 'application/json');
@@ -134,27 +134,30 @@ adminRouter.post('/signup', cors.corsWithOptions, (req, res, next) => {
 //   res.json({success: true, status: 'You are successfully logged in!'});
 // });
 
-adminRouter.post('/login', cors.corsWithOptions, passport.authenticate('adminLocal'), (req, res) => {
+adminRouter.post('/login', cors.corsWithOptions, (req, res, next) => {
 
-  var token = authenticate.getToken({_id: req.user._id});
-  res.statusCode = 200;
-  res.setHeader('Content-Type', 'application/json');
-  res.json({success: true, token: token, status: 'You are successfully logged in!'});
+  passport.authenticate('adminLocal', (err, user, info) => {
+    if (err)
+      return next(err);
+
+    if (!user) {
+      res.statusCode = 401;
+      res.setHeader('Content-Type', 'application/json');
+      res.json({success: false, status: 'Login Unsuccessful!', err: info});
+    }
+    req.logIn(user, (err) => {
+      if (err) {
+        res.statusCode = 401;
+        res.setHeader('Content-Type', 'application/json');
+        res.json({success: false, status: 'Login Unsuccessful!', err: 'Could not log in user!'});          
+      }
+
+      var token = authenticate.getToken({_id: req.user._id});
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'application/json');
+      res.json({success: true, status: 'Login Successful!', token: token});
+    }); 
+  }) (req, res, next);
 });
-
-adminRouter.get('/logout', cors.cors, (req, res) => {
-  if (req.session) {
-      console.log(req.session);
-    req.session.destroy();
-    res.clearCookie('session-id');
-    
-  }
-  else {
-    var err = new Error('You are not logged in!');
-    err.status = 403;
-    next(err);
-  }
-});
-
 
 module.exports = adminRouter;
