@@ -26,75 +26,6 @@ adminRouter.get('/', cors.cors,authenticate.verifyUser, authenticate.verifyAdmin
     }); 
 });
 
-// router.post('/signup', (req, res, next) => {
-//   User.findOne({username: req.body.username})
-//   .then((user) => {
-//     if(user != null) {
-//       var err = new Error('User ' + req.body.username + ' already exists!');
-//       err.status = 403;
-//       next(err);
-//     }
-//     else {
-//       return User.create({
-//         username: req.body.username,
-//         password: req.body.password});
-//     }
-//   })
-//   .then((user) => {
-//     res.statusCode = 200;
-//     res.setHeader('Content-Type', 'application/json');
-//     res.json({status: 'Registration Successful!', user: user});
-//   }, (err) => next(err))
-//   .catch((err) => next(err));
-// });
-
-// router.post('/login', (req, res, next) => {
-
-//   if(!req.session.user) {
-//     var authHeader = req.headers.authorization;
-    
-//     if (!authHeader) {
-//       var err = new Error('You are not authenticated!');
-//       res.setHeader('WWW-Authenticate', 'Basic');
-//       err.status = 401;
-//       return next(err);
-//     }
-  
-//     var auth = new Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
-//     var username = auth[0];
-//     var password = auth[1];
-  
-//     User.findOne({username: username})
-//     .then((user) => {
-//       if (user === null) {
-//         var err = new Error('User ' + username + ' does not exist!');
-//         err.status = 403;
-//         return next(err);
-//       }
-//       else if (user.password !== password) {
-//         var err = new Error('Your password is incorrect!');
-//         err.status = 403;
-//         return next(err);
-//       }
-//       else if (user.username === username && user.password === password) {
-//         req.session.user = 'authenticated';
-//         res.statusCode = 200;
-//         res.setHeader('Content-Type', 'text/plain');
-//         res.end('You are authenticated!')
-//       }
-//     })
-//     .catch((err) => next(err));
-//   }
-//   else {
-//     res.statusCode = 200;
-//     res.setHeader('Content-Type', 'text/plain');
-//     res.end('You are already authenticated!');
-//   }
-// })
-// passport.use(new localStrategy({
-//   usernameField: 'email'
-// }));
-
 adminRouter.post('/signup', cors.corsWithOptions, (req, res, next) => {
   Admin.register(new Admin({email: req.body.email}), 
     req.body.password, (err, user) => {
@@ -159,5 +90,85 @@ adminRouter.post('/login', cors.corsWithOptions, (req, res, next) => {
     }); 
   }) (req, res, next);
 });
+
+adminRouter.post('/:adminId/changepassword', function(req, res) {
+
+  Admin.findOne({ _id: req.params.adminId },(err, user) => {
+    // Check if error connecting
+    if (err) {
+      res.json({ success: false, message: err }); // Return error
+    } else {
+      // Check if user was found in database
+      if (!user) {
+        res.json({ success: false, message: 'User not found' }); // Return error, user was not found in db
+      } else {
+        user.changePassword(req.body.oldpassword, req.body.newpassword, function(err) {
+           if(err) {
+                    if(err.name === 'IncorrectPasswordError'){
+                         res.json({ success: false, message: 'Incorrect password' }); // Return error
+                    }else {
+                        res.json({ success: false, message: 'Something went wrong!! Please try again after sometimes.' });
+                    }
+          } else {
+            res.json({ success: true, message: 'Your password has been changed successfully' });
+           }
+         })
+      }
+    }
+  });
+});
+
+adminRouter.route('/:userId')
+.options(cors.corsWithOptions,authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => { res.sendStatus(200); })
+.get(cors.cors, (req,res,next) => {
+    Admin.findById(req.params.userId)
+    .populate('wishlist')
+    .populate('orders')
+    .populate('cart.varient')
+    .then(user =>{
+        res.statusCode =200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(user);
+    }, err =>{
+        next(err);
+    }).catch(err =>{
+        next(err);
+    }); 
+})
+
+.post(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
+    res.statusCode = 403;
+    res.end('POST operation not supported on /users/'+ req.params.userId);
+})
+
+.put(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+    Admin.findByIdAndUpdate(req.params.userId,{
+        $set: req.body
+    },
+    {
+        new: true
+    }).then(user =>{
+        res.statusCode =200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(user);
+    }, err =>{
+        next(err);
+    }).catch(err =>{
+        next(err);
+    }); 
+})
+
+.delete(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+    Admin.findByIdAndRemove(req.params.userId).then(response =>{
+        res.statusCode =200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(response); 
+    }, err =>{
+        next(err);
+    }).catch(err =>{
+        next(err);
+    });
+});
+
 
 module.exports = adminRouter;
