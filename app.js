@@ -17,6 +17,7 @@ var categoryRouter = require('./routes/categoryRouter');
 var productRouter = require('./routes/productRouter');
 var orderRouter = require('./routes/orderRouter');
 var varientRouter = require('./routes/varientRouter');
+var uploadRouter = require('./routes/uploadRouter')
 
 const mongoose = require('mongoose');
 const categories = require('./models/categories');
@@ -54,6 +55,7 @@ app.use(express.urlencoded({ extended: false }));
 
 app.use(passport.initialize());
 // app.use(passport.session());
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/users', usersRouter);
 app.use('/admin', adminRouter);
@@ -65,6 +67,7 @@ app.use('/categories', categoryRouter);
 app.use('/orders', orderRouter);
 app.use('/products', productRouter);
 app.use('/varients', varientRouter);
+app.use('/imageUpload',uploadRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
