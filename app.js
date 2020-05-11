@@ -17,7 +17,8 @@ var categoryRouter = require('./routes/categoryRouter');
 var productRouter = require('./routes/productRouter');
 var orderRouter = require('./routes/orderRouter');
 var varientRouter = require('./routes/varientRouter');
-var uploadRouter = require('./routes/uploadRouter')
+var uploadRouter = require('./routes/uploadRouter');
+var mailRouter = require('./routes/mailRouter');
 
 const mongoose = require('mongoose');
 const categories = require('./models/categories');
@@ -68,6 +69,7 @@ app.use('/orders', orderRouter);
 app.use('/products', productRouter);
 app.use('/varients', varientRouter);
 app.use('/imageUpload',uploadRouter);
+app.use('/mail', mailRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
