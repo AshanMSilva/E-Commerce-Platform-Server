@@ -10,8 +10,7 @@ var categorySchema = new Schema({
         unique: true
     },
     image: {
-        type: String, 
-        required: true
+        type: String
     },
     subCategories: [{
         type: mongoose.Schema.Types.ObjectId, 

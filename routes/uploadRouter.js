@@ -29,7 +29,7 @@ const categoryStorage = multer.diskStorage({
     },
 
     filename: (req, file, cb) => {
-        cb(null, file.originalname)
+        cb(null, String(req.params.id))
     }
 });
 
@@ -42,7 +42,7 @@ const productStorage = multer.diskStorage({
     },
 
     filename: (req, file, cb) => {
-        cb(null, file.originalname)
+        cb(null, String(req.params.id))
     }
 });
 
@@ -55,7 +55,7 @@ const profilePictureStorage = multer.diskStorage({
     },
 
     filename: (req, file, cb) => {
-        cb(null, file.originalname)
+        cb(null, String(req.params.id))
     }
 });
 
@@ -88,7 +88,7 @@ uploadRouter.route('/')
     res.end('DELETE operation not supported on /imageUpload');
 });
 
-uploadRouter.route('/category')
+uploadRouter.route('/category/:id')
 .options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
 .get(cors.cors, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     res.statusCode = 403;
@@ -108,7 +108,7 @@ uploadRouter.route('/category')
     res.end('DELETE operation not supported on /imageUpload');
 });
 
-uploadRouter.route('/product')
+uploadRouter.route('/product/:id')
 .options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
 .get(cors.cors, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     res.statusCode = 403;
@@ -128,7 +128,7 @@ uploadRouter.route('/product')
     res.end('DELETE operation not supported on /imageUpload');
 });
 
-uploadRouter.route('/profilePicture')
+uploadRouter.route('/profilePicture/:id')
 .options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
 .get(cors.cors, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     res.statusCode = 403;

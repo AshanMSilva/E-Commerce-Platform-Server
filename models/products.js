@@ -13,8 +13,7 @@ var productSchema = new Schema({
         required: true
     },
     image: {
-        type: String, 
-        required: true
+        type: String
     },
     varients: [{
         type: mongoose.Schema.Types.ObjectId, 
