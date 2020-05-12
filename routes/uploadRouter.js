@@ -29,7 +29,8 @@ const categoryStorage = multer.diskStorage({
     },
 
     filename: (req, file, cb) => {
-        cb(null, String(req.params.id))
+        const extension = file.mimetype.split('/')[1];
+        cb(null, String(req.params.id)+'.'+extension)
     }
 });
 
@@ -42,7 +43,8 @@ const productStorage = multer.diskStorage({
     },
 
     filename: (req, file, cb) => {
-        cb(null, String(req.params.id))
+        const extension = file.mimetype.split('/')[1];
+        cb(null, String(req.params.id)+'.'+extension)
     }
 });
 
@@ -55,7 +57,8 @@ const profilePictureStorage = multer.diskStorage({
     },
 
     filename: (req, file, cb) => {
-        cb(null, String(req.params.id))
+        const extension = file.mimetype.split('/')[1];
+        cb(null, String(req.params.id)+'.'+extension)
     }
 });
 
