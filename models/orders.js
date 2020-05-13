@@ -33,8 +33,12 @@ var paymentDetailsSchema = new Schema({
 
 var itemSchema = new Schema({
     varient: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Varient'
+        type: Number,
+        required:true
+    },
+    product:{
+        type: Number,
+        required:true
     },
     quantity: {
         type: Number,

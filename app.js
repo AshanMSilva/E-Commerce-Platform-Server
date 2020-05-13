@@ -16,7 +16,7 @@ var adminRouter = require('./routes/adminRouter');
 var categoryRouter = require('./routes/categoryRouter');
 var productRouter = require('./routes/productRouter');
 var orderRouter = require('./routes/orderRouter');
-var varientRouter = require('./routes/varientRouter');
+// var varientRouter = require('./routes/varientRouter');
 var uploadRouter = require('./routes/uploadRouter');
 var mailRouter = require('./routes/mailRouter');
 
@@ -24,7 +24,7 @@ const mongoose = require('mongoose');
 const categories = require('./models/categories');
 const products = require('./models/products');
 const orders = require('./models/orders');
-const varients = require('./models/varients');
+// const varients = require('./models/varients');
 
 // const url = 'mongodb://localhost:27017/conFusion';
 const url = config.mongoUrl;
@@ -67,7 +67,7 @@ app.use('/admin', adminRouter);
 app.use('/categories', categoryRouter);
 app.use('/orders', orderRouter);
 app.use('/products', productRouter);
-app.use('/varients', varientRouter);
+// app.use('/varients', varientRouter);
 app.use('/imageUpload',uploadRouter);
 app.use('/mail', mailRouter);
 

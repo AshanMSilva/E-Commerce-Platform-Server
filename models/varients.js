@@ -24,10 +24,6 @@ var varientSchema = new Schema({
         type: Number,
         required: true
     },
-    image: {
-        type: String, 
-        required: true
-    },
     availability:{
         type: Number,
         required: true

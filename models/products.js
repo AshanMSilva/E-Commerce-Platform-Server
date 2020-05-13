@@ -2,6 +2,41 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 // require('mongoose-currency').loadType(mongoose);
 
+var attributeSchema = new Schema({
+    name:{
+        type: String,
+        required: true
+    },
+    value:{
+        type: String,
+        required: true
+    }
+},{
+    timestamps: true
+});
+
+var varientSchema = new Schema({
+    name:{
+        type: String,
+        required:true
+    },
+    price: {
+        type: Number,
+        required: true
+    },
+    availability:{
+        type: Number,
+        required: true
+    },
+    attributes: [attributeSchema],
+    sales: {
+        type: Number, 
+        default: 0
+    }
+}, {
+    timestamps: true
+});
+
 
 var productSchema = new Schema({
     brand:{
@@ -15,10 +50,7 @@ var productSchema = new Schema({
     image: {
         type: String
     },
-    varients: [{
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: 'Varient'
-    }],
+    varients: [varientSchema],
     sales: {
         type: Number, 
         default: 0
