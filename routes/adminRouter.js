@@ -122,9 +122,6 @@ adminRouter.route('/:userId')
 .options(cors.corsWithOptions,authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => { res.sendStatus(200); })
 .get(cors.cors, (req,res,next) => {
     Admin.findById(req.params.userId)
-    .populate('wishlist')
-    .populate('orders')
-    .populate('cart.varient')
     .then(user =>{
         res.statusCode =200;
         res.setHeader('Content-Type', 'application/json');

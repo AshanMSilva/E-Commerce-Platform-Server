@@ -71,8 +71,10 @@ var User = new Schema({
             ref: 'Product'
         }
     ],
-    cart: [itemSchema],
+    cart: [itemSchema]
     
+}, {
+    timestamps: true
 });
 User.plugin(passportLocalMongoose, { usernameField : 'email' });
 
