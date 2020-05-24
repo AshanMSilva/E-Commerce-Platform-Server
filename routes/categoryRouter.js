@@ -137,7 +137,7 @@ categoryRouter.route('/:categoryId/subCategories')
     .then((category) => {
         if (category != null) {
             // req.body.author = req.user._id;
-            category.subCategories.push(req.body);
+            category.subCategories.push(req.body.id);
             category.save()
             .then((category) => {
                 Categories.findById(category._id).populate('subCategories').populate('products').then(category =>{
@@ -188,7 +188,7 @@ categoryRouter.route('/:categoryId/subCategories/:subCategoryId')
 .options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
 .get(cors.cors, (req,res,next) => {
     Categories.findById(req.params.categoryId)
-    .populate('subcategories')
+    .populate('subCategories')
     .then((category) => {
         if (category != null && category.subCategories.id(req.params.subCategoryId) != null) {
 
@@ -223,9 +223,23 @@ categoryRouter.route('/:categoryId/subCategories/:subCategoryId')
     Categories.findById(req.params.categoryId)
     .populate('subCategories')
     .then((category) => {
-        if (categry != null && category.subCategories.id(req.params.subCategoryId) != null) {
-            // if(req.user._id.equals(category.subCategories.id(req.params.subCategorytId).author)){
-                category.subCategories.id(req.params.subCategoryId).remove();
+        if (category != null) {
+            let subCategories = category.subCategories;
+            var ind = null;
+            for (let index = 0; index < subCategories.length; index++) {
+                const cat = subCategories[index];
+                // console.log(typeof(req.params.subCategoryId));
+                // console.log(typeof(cat._id,this.toString()));
+                if(cat._id.toString() === req.params.subCategoryId){
+                    ind = index;
+                    
+                    break;
+                }
+                
+            }
+            // console.log(ind);
+            if(ind !=null){
+                category.subCategories.splice(ind,1);
                 category.save()
                 .then((category) => {
                     Categories.findById(category._id).populate('subCategories').populate('products').then(category =>{
@@ -235,6 +249,15 @@ categoryRouter.route('/:categoryId/subCategories/:subCategoryId')
                     })
                                     
                 }, (err) => next(err));
+            }
+            else {
+                err = new Error('Sub Category ' + req.params.subCategoryId + ' not found');
+                err.status = 404;
+                return next(err);            
+            }
+            // if(req.user._id.equals(category.subCategories.id(req.params.subCategorytId).author)){
+                // category.subCategories.id(req.params.subCategoryId).remove();
+                
             // }
             // else{
             //     err = new Error('Only author can update a comment');
@@ -243,16 +266,12 @@ categoryRouter.route('/:categoryId/subCategories/:subCategoryId')
             // }
             
         }
-        else if (category == null) {
+        else{
             err = new Error('Category ' + req.params.categoryId + ' not found');
             err.status = 404;
             return next(err);
         }
-        else {
-            err = new Error('Sub Category ' + req.params.subCategoryId + ' not found');
-            err.status = 404;
-            return next(err);            
-        }
+        
     }, (err) => next(err))
     .catch((err) => next(err));
 });

@@ -51,7 +51,7 @@ adminRouter.post('/signup', cors.corsWithOptions, (req, res, next) => {
         passport.authenticate('adminLocal')(req, res, () => {
           res.statusCode = 200;
           res.setHeader('Content-Type', 'application/json');
-          res.json({success: true, status: 'Registration Successful!'});
+          res.json(user);
         });
       });
       

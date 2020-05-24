@@ -8,18 +8,14 @@ var attributeSchema = new Schema({
         required: true
     },
     value:{
-        type: String,
-        required: true
+        type: String
+       
     }
 },{
     timestamps: true
 });
 
 var varientSchema = new Schema({
-    name:{
-        type: String,
-        required:true
-    },
     price: {
         type: Number,
         required: true
