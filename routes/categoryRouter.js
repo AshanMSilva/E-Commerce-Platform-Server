@@ -302,7 +302,7 @@ categoryRouter.route('/:categoryId/products')
     .then((category) => {
         if (category != null) {
             // req.body.author = req.user._id;
-            category.products.push(req.body);
+            category.products.push(req.body.id);
             category.save()
             .then((category) => {
                 Categories.findById(category._id).populate('subCategories').populate('products').then(category =>{
@@ -392,9 +392,22 @@ categoryRouter.route('/:categoryId/products/:productId')
     Categories.findById(req.params.categoryId)
     .populate('products')
     .then((category) => {
-        if (categry != null && category.products.id(req.params.productId) != null) {
-            // if(req.user._id.equals(category.subCategories.id(req.params.subCategorytId).author)){
-                category.products.id(req.params.productId).remove();
+        if (category != null) {
+            let products = category.products;
+            var ind = null;
+            for (let index = 0; index < products.length; index++) {
+                const cat = products[index];
+                // console.log(typeof(req.params.subCategoryId));
+                // console.log(typeof(cat._id,this.toString()));
+                if(cat._id.toString() === req.params.productId){
+                    ind = index;
+                    
+                    break;
+                }
+                
+            }
+            if(ind !=null){
+                category.products.splice(ind,1);
                 category.save()
                 .then((category) => {
                     Categories.findById(category._id).populate('subCategories').populate('products').then(category =>{
@@ -404,6 +417,15 @@ categoryRouter.route('/:categoryId/products/:productId')
                     })
                                     
                 }, (err) => next(err));
+            }
+            else {
+                err = new Error('Products ' + req.params.productId + ' not found');
+                err.status = 404;
+                return next(err);            
+            }
+            // console.log(ind);
+            // if(req.user._id.equals(category.subCategories.id(req.params.subCategorytId).author)){
+                
             // }
             // else{
             //     err = new Error('Only author can update a comment');
@@ -412,16 +434,12 @@ categoryRouter.route('/:categoryId/products/:productId')
             // }
             
         }
-        else if (category == null) {
+        else {
             err = new Error('Category ' + req.params.categoryId + ' not found');
             err.status = 404;
             return next(err);
         }
-        else {
-            err = new Error('Products ' + req.params.productId + ' not found');
-            err.status = 404;
-            return next(err);            
-        }
+        
     }, (err) => next(err))
     .catch((err) => next(err));
 });
