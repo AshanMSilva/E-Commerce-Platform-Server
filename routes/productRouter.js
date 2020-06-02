@@ -219,6 +219,7 @@ productRouter.route('/:productId/varients/:varientId')
             if(req.body.sales){
                 product.varients.id(req.params.varientId).sales = req.body.sales;
             }
+            product.save();
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
             res.json(product.varients.id(req.params.varientId));
