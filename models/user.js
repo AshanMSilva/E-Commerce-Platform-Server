@@ -51,7 +51,8 @@ var User = new Schema({
         // required: true
     },
     image:{
-        type: String
+        type: String,
+        default:'default-avatar.png'
     },
     addresses: [addressSchema],
     contactNumbers:[

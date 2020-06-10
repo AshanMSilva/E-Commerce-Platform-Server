@@ -13,8 +13,8 @@ adminRouter.use(bodyParser.json());
 
 /* GET users listing. */
 adminRouter.options('/', cors.corsWithOptions, (req, res) => { res.sendStatus(200); });
-adminRouter.get('/', cors.cors,authenticate.verifyUser, authenticate.verifyAdmin, function(req, res, next) {
-  Admin.find({})
+adminRouter.get('/', cors.cors, function(req, res, next) {
+  Admin.find(req.query)
     .then(users =>{
         res.statusCode =200;
         res.setHeader('Content-Type', 'application/json');
@@ -91,7 +91,9 @@ adminRouter.post('/login', cors.corsWithOptions, (req, res, next) => {
   }) (req, res, next);
 });
 
-adminRouter.post('/:adminId/changepassword', function(req, res) {
+adminRouter.route('/:adminId/changepassword')
+.options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
+.post(cors.corsWithOptions, authenticate.verifyUser,authenticate.verifyAdmin, (req,res,next) => {
 
   Admin.findOne({ _id: req.params.adminId },(err, user) => {
     // Check if error connecting
@@ -110,6 +112,30 @@ adminRouter.post('/:adminId/changepassword', function(req, res) {
                         res.json({ success: false, message: 'Something went wrong!! Please try again after sometimes.' });
                     }
           } else {
+            res.json({ success: true, message: 'Your password has been changed successfully' });
+           }
+         })
+      }
+    }
+  });
+});
+adminRouter.route('/:adminId/forgotpassword')
+.options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
+.post(cors.corsWithOptions, (req,res,next) => {
+  Admin.findOne({ _id: req.params.adminId },(err, user) => {
+    // Check if error connecting
+    if (err) {
+      res.json({ success: false, message: err }); // Return error
+    } else {
+      // Check if user was found in database
+      if (!user) {
+        res.json({ success: false, message: 'User not found' }); // Return error, user was not found in db
+      } else {
+        user.setPassword(req.body.password, function(err, user) {
+           if(err) {
+                    res.json({success:false, message: err});
+          } else {
+            user.save();
             res.json({ success: true, message: 'Your password has been changed successfully' });
            }
          })

@@ -11,11 +11,11 @@ mailRouter.use(bodyParser.json());
 
 mailRouter.route('/')
 .options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
-.get(cors.cors, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+.get(cors.cors, (req, res, next) => {
     res.statusCode = 403;
     res.end('GET operation not supported on /mail');
 })
-.post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
+.post(cors.corsWithOptions, (req, res) => {
     var transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
@@ -47,11 +47,11 @@ mailRouter.route('/')
       });
     
 })
-.put(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+.put(cors.corsWithOptions, (req, res, next) => {
     res.statusCode = 403;
     res.end('PUT operation not supported on /mail');
 })
-.delete(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+.delete(cors.corsWithOptions, (req, res, next) => {
     res.statusCode = 403;
     res.end('DELETE operation not supported on /mail');
 });
