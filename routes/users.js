@@ -12,8 +12,8 @@ router.use(bodyParser.json());
 
 /* GET users listing. */
 router.options('/', cors.corsWithOptions, (req, res) => { res.sendStatus(200); });
-router.get('/', cors.cors, authenticate.verifyUser, authenticate.verifyAdmin, function(req, res, next) {
-  User.find({})
+router.get('/', cors.cors, function(req, res, next) {
+  User.find(req.query)
     .then(users =>{
         res.statusCode =200;
         res.setHeader('Content-Type', 'application/json');
@@ -41,6 +41,7 @@ router.post('/signup', cors.corsWithOptions, (req, res, next) => {
         user.lastName = req.body.lastName;
       }
       user.addresses= req.body.addresses;
+      user.contactNumbers = req.body.contactNumbers;
       user.save((err,user)=>{
         if(err){
           res.statusCode = 500;
